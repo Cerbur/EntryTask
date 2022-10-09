@@ -155,7 +155,36 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 ```
 
 ```go
-func Struct(r *http.Request, i interface{}) error 
+func Struct(r *http.Request, i interface{}) error {
+    v := reflect.ValueOf(i).Elem()
+    t := v.Type()
+    for i := 0; i < v.NumField(); i++ {
+        field := v.Field(i)
+        fieldType := t.Field(i)
+        tag := fieldType.Tag
+        
+        // json获取
+        jsonName := tag.Get("json")
+        s := r.FormValue(jsonName)
+        
+        // 正则校验
+        pattern := tag.Get("pattern")
+        if pattern != "" {
+            match, err := regexp.Match(pattern, []byte(s))
+            if err != nil {
+                return err
+            }
+            if !match {
+                return errors.New(fmt.Sprint(fieldType.Name, " param is regexp match ", pattern))
+            }   
+        }
+        err := setValue(s, field)
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
 ```
 
 此方法会根据 json 与 pattern 实现数据绑定。
@@ -240,37 +269,7 @@ File: http/bind/bind.go
 ##### Function
 
 ```go
-func Struct(r *http.Request, i interface{}) error {
-    v := reflect.ValueOf(i).Elem()
-    t := v.Type()
-    for i := 0; i < v.NumField(); i++ {
-        field := v.Field(i)
-        fieldType := t.Field(i)
-        tag := fieldType.Tag
-        
-        // json获取
-        jsonName := tag.Get("json")
-        s := r.FormValue(jsonName)
-        
-        // 正则校验
-        pattern := tag.Get("pattern")
-        if pattern != "" {
-            match, err := regexp.Match(pattern, []byte(s))
-            if err != nil {
-                return err
-            }
-            if !match {
-                return errors.New(fmt.Sprint(fieldType.Name, " param is regexp match ", pattern))
-            }
-        }
-        
-        err := setValue(s, field)
-        if err != nil {
-            return err
-        }
-    }
-    return nil
-}
+func Struct(r *http.Request, i interface{}) error 
 ```
 
 ###### Struct
