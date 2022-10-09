@@ -8,7 +8,6 @@ import (
 )
 
 // ClientAutoRegister 客户端的自动注册
-// golang的反射不是特别了解，明天查阅相关的资料再来实现自动注册功能
 func ClientAutoRegister(cli *client.Client, rpcFunction *function.RPCFunction) {
 	valueOf := reflect.ValueOf(rpcFunction).Elem()
 	typeOf := valueOf.Type()
